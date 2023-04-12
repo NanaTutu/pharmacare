@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "288132569193",
+    "project_id": "pharmacare-f61b6",
+    "storage_bucket": "pharmacare-f61b6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288132569193:android:331db37e8e48c3bf5c6af8",
+        "android_client_info": {
+          "package_name": "com.tutu.martin.pharmacare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "288132569193-jb9ghrjmjfgm9qdqqfqr97old9gb1p3g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0mb-4VkpeBpUIA5Wo8D7IjmevKhpxIVY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "288132569193-jb9ghrjmjfgm9qdqqfqr97old9gb1p3g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
