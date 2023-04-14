@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pharmacare/Auth/AuthPage.dart';
 import 'package:pharmacare/Screens/HomePage.dart';
-import 'package:pharmacare/Screens/LoginPage.dart';
 
 
 class AuthRedirect extends StatelessWidget {
@@ -16,7 +16,7 @@ class AuthRedirect extends StatelessWidget {
           if(snapshot.hasData){
             return Homepage();
           }else{
-            return LoginPage();
+            return AuthPage();
           }
         },
       ),

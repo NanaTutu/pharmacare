@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'dart:io';
+import 'package:quickalert/quickalert.dart';
+
+import 'package:pharmacare/Screens/ForgotPasswordPage.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  final VoidCallback showRegisterPage;
+  const LoginPage({Key? key, required this.showRegisterPage}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -25,11 +29,11 @@ class _LoginPageState extends State<LoginPage> {
           password: _passwordController.text.trim()
       );
     }on FirebaseAuthException catch  (e) {
-      showDialog(
+      QuickAlert.show(
         context: context,
-        builder: (BuildContext context) {
-          return alert;
-        },
+        type: QuickAlertType.error,
+        title: 'Oops...',
+        text: 'Wrong email or password',
       );
     }
   }
@@ -146,6 +150,35 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 10),
 
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 25
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children:[
+                      GestureDetector(
+                        onTap: (){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context){ return ForgotPasswordPage();})
+                          );
+                        },
+                        child: const Text(
+                          'Forgot Password',
+                          style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
                 //sign in button
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -177,20 +210,23 @@ class _LoginPageState extends State<LoginPage> {
                 //not a member? register now
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Not a member? ',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18
                       ),
                     ),
-                    Text(
-                      'Register Now',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18
+                    GestureDetector(
+                      onTap: widget.showRegisterPage,
+                      child: const Text(
+                        'Register Now',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18
+                        ),
                       ),
                     )
                   ],
