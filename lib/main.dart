@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:pharmacare/Screens/AuthRedirect.dart';
-import 'package:pharmacare/Screens/LoginPage.dart';
+import 'package:pharmacare/Auth/AuthRedirect.dart';
 
 
 void main() async{

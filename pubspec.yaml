@@ -38,6 +38,8 @@ dependencies:
   firebase_auth:
   firebase_core:
   google_fonts:
+  cloud_firestore:
+  quickalert: ^1.0.1
 
 dev_dependencies:
   flutter_test:
