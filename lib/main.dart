@@ -1,11 +1,69 @@
+
+import 'dart:ui';
+
+import 'package:alarm/alarm.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:pharmacare/Auth/AuthRedirect.dart';
+import 'package:pharmacare/Util/notifyService.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
+int count = 0;
+void callbackDispatcher(){
+  Workmanager().executeTask((taskName, inputData) {
+    print('Executing Task: ' + taskName);
+    NotificationService().showNotification(
+      title: '${count++}',
+      body: '${taskName}--${count++}' ,
+    );
+    return  Future.value(true);
+  });
+}
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await AndroidAlarmManager.initialize();
+  NotificationService().initNotification();
+
+  await Workmanager().initialize(callbackDispatcher);
+
+  final androidInfo = await DeviceInfoPlugin().androidInfo;
+  late final Map<Permission, PermissionStatus> statuses;
+
+  if(androidInfo.version.sdkInt<=32){
+    statuses = await[
+      Permission.storage
+    ].request();
+  }else{
+    statuses = await[
+      Permission.storage,
+      Permission.notification
+    ].request();
+  }
+
+  // var allAccepted = true;
+  // statuses.forEach((permission, status) {
+  //    if(status != PermissionStatus.granted){
+  //      allAccepted = false;
+  //    }
+  // });
+
+  // if(allAccepted){
+  //   final FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+  //   final path = result?.files.single.path;
+  //
+  //   if(path!=null){
+  //
+  //   }
+  // }
+
   runApp(const MyApp());
 }
 
