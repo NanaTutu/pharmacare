@@ -17,11 +17,21 @@ import 'package:workmanager/workmanager.dart';
 int count = 0;
 void callbackDispatcher(){
   Workmanager().executeTask((taskName, inputData) {
-    print('Executing Task: ' + taskName);
-    NotificationService().showNotification(
-      title: '${count++}',
-      body: '${taskName}--${count++}' ,
-    );
+    var values = inputData?.values.toList();
+    String date = '${DateTime.now().day}-${DateTime.now().month}-${DateTime.now().year}';
+    if(values?[0] == date){
+      Workmanager().cancelByUniqueName(values?[1]);
+    }else{
+      NotificationService().showNotification(
+        title: 'PharmaCare Reminder',
+        body: '${values?[1]} - ${values?[2]}',
+      );
+    }
+    print('${values?[0]}, $date ,${values?[1]}, ${values?[2]}');
+    // NotificationService().showNotification(
+    //   title: '${count++}',
+    //   body: '${taskName}--${count++}' ,
+    // );
     return  Future.value(true);
   });
 }
