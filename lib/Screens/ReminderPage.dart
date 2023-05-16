@@ -44,7 +44,7 @@ class _ReminderPageState extends State<ReminderPage> {
       _endDate.text = '${dateTime.day}-${dateTime.month}-${dateTime.year}';
 
       user_email = FirebaseAuth.instance.currentUser?.email;
-      print(user_email);
+      // print(user_email);
     });
     NotificationService().initNotification();
   }
@@ -103,7 +103,7 @@ class _ReminderPageState extends State<ReminderPage> {
               Expanded(
                 child: Column(
                   children: [
-                    //Medication Textfield
+                    //Medication Text field
                     Container(
                       decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -235,7 +235,7 @@ class _ReminderPageState extends State<ReminderPage> {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 10,
                         ),
                         Flexible(
@@ -345,7 +345,7 @@ class _ReminderPageState extends State<ReminderPage> {
 
                     Container(
                       alignment: Alignment.centerLeft,
-                      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                       child: Text('Medication History',
                         style: GoogleFonts.poppins(
                             fontSize: 20,
@@ -375,7 +375,7 @@ class _ReminderPageState extends State<ReminderPage> {
                                   itemBuilder: (context, index){
                                     final medData = data?[index];
                                     return Container(
-                                      margin: EdgeInsets.symmetric(vertical: 5),
+                                      margin: const EdgeInsets.symmetric(vertical: 5),
                                       decoration: BoxDecoration(
                                         color: Colors.deepPurple[500],
                                         borderRadius: BorderRadius.circular(15)

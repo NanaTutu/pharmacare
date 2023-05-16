@@ -1,5 +1,11 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pharmacare/Auth/AuthPage.dart';
+import 'package:pharmacare/Auth/AuthRedirect.dart';
 import 'package:pharmacare/Screens/ReminderPage.dart';
 import 'package:pharmacare/Screens/UpdateUserData.dart';
 
@@ -11,6 +17,43 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+
+  String firstname = '';
+  String lastname = '';
+  String imageUrl = '';
+  String phone_number = '';
+
+  Future<String> getUserDetails() async{
+    String? email = FirebaseAuth.instance.currentUser?.email;
+    final  CollectionReference collectionReference = FirebaseFirestore.instance.collection('users');
+    QuerySnapshot querySnapshot = await collectionReference.where('email', isEqualTo: email).get();
+    List<Object?> userData = querySnapshot.docs.map((e) => e.data()).toList();
+    String jsonData = jsonEncode(userData);
+
+    return jsonData;
+  }
+  Future<void> logout() async {
+    FirebaseAuth auth = FirebaseAuth.instance;
+    await auth.signOut();
+    // print('User logged out successfully.');
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    getUserDetails().then((value) {
+      var data = jsonDecode(value);
+      print(data);
+      setState(() {
+        firstname = data[0]['first_name'];
+        lastname = data[0]['last_name'];
+        phone_number = data[0]['phone_number'];
+        imageUrl = data[0]['image'];
+      });
+    });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,9 +83,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             Navigator.of(context).push(MaterialPageRoute(builder: (context)=>ProfilePage()));
                             // Navigator.of(context).push(MaterialPageRoute(builder: (context) => NewScreen()));
                           },
-                          child: const CircleAvatar(
+                          child: CircleAvatar(
                             backgroundColor: Colors.deepPurple,
-                            backgroundImage: AssetImage('assets/img/profilepic.jpg'),
+                            backgroundImage: NetworkImage(imageUrl)
                           ),
                         )
                       ],
@@ -54,23 +97,23 @@ class _ProfilePageState extends State<ProfilePage> {
                   Expanded(
                     child: Column(
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           backgroundColor: Colors.grey,
                           radius: 70,
-                          backgroundImage: AssetImage('assets/img/profilepic.jpg'),
+                          backgroundImage: NetworkImage(imageUrl)
                         ),
                         const SizedBox(height: 10),
 
                         //user's name
                         Text(
-                          "User's Name",
+                          "$firstname $lastname",
                           style: GoogleFonts.poppins(
                             fontSize: 22,
                           ),
                         ),
                         //user's phone number
                         Text(
-                          "050 120 0589",
+                          phone_number,
                           style:GoogleFonts.poppins(
                             fontSize: 20,
                             color: Colors.grey[500]
@@ -128,12 +171,36 @@ class _ProfilePageState extends State<ProfilePage> {
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
+                              ),
+                              SizedBox(
+                                height: MediaQuery.of(context).size.height*0.02,
+                              ),
+                              GestureDetector(
+                                onTap: (){
+                                  FirebaseAuth.instance.signOut().whenComplete((){
+                                    Navigator.of(context).push(MaterialPageRoute(builder: (context)=>AuthRedirect()));
+                                  });
+                                },
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                                  decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(12)
+                                  ),
+                                  child: Text(
+                                    'Log out',
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 20,
+                                        color: Colors.white
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
                               )
                             ],
                           )
-                        )
-
-
+                        ),
                       ],
                     )
                   ),

@@ -53,6 +53,11 @@ dependencies:
   device_info_plus: ^8.2.0
   permission_handler:
   file_picker:
+  url_launcher: ^6.1.10
+  geolocator:
+  geocoding:
+  location:
+  loading_animation_widget: ^1.2.0+4
 
 dev_dependencies:
   flutter_test:
