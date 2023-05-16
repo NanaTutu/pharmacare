@@ -21,6 +21,10 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _isVisible = true;
+  Icon _visiblityIcon = const Icon(Icons.visibility);
+  Icon _visiblityOffIcon = const Icon(Icons.visibility_off);
+
   //sign in
   Future signIn() async{
     try{
@@ -37,19 +41,6 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
   }
-
-  // set up the AlertDialog
-  AlertDialog alert = AlertDialog(
-    title: Text("Alert"),
-    content: Text("Wrong email or password"),
-    actions: [
-        TextButton(
-        child: Text("OK"),
-            onPressed: () { },
-      )
-    ],
-  );
-
   //dispose off controllers
   @override
   void dispose() {
@@ -139,10 +130,26 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: TextField(
                         controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
+                        obscureText: _isVisible,
+                        decoration: InputDecoration(
                             border: InputBorder.none,
-                            hintText: 'Password'
+                            hintText: 'Password',
+                          suffixIcon: IconButton(
+                            icon: _isVisible?_visiblityIcon:_visiblityOffIcon,
+                            color: Colors.grey,
+                            onPressed: () {
+                              // print('i can see now');
+                              if(_isVisible){
+                                setState(() {
+                                  _isVisible = false;
+                                });
+                              }else{
+                                setState(() {
+                                  _isVisible = true;
+                                });
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ),

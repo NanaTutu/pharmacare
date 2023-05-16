@@ -1,52 +1,37 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:pharmacare/Util/UserModel.dart';
-import 'package:quickalert/models/quickalert_type.dart';
-import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:pharmacare/Screens/PharmacyProfilePage.dart';
+import 'package:quickalert/quickalert.dart';
 
-class UserDataUpdate extends StatefulWidget {
-  const UserDataUpdate({Key? key}) : super(key: key);
+class PharmacyDataUpdate extends StatefulWidget {
+  const PharmacyDataUpdate({Key? key}) : super(key: key);
 
   @override
-  State<UserDataUpdate> createState() => _UserDataUpdateState();
+  State<PharmacyDataUpdate> createState() => _PharmacyDataUpdateState();
 }
 
-class _UserDataUpdateState extends State<UserDataUpdate> {
+class _PharmacyDataUpdateState extends State<PharmacyDataUpdate> {
 
-  //controller
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _ageController = TextEditingController();
+  final _pharmacyNameController = TextEditingController();
   final _phone_number = TextEditingController();
+  final _location = TextEditingController();
 
   ImagePicker imagePicker = ImagePicker();
   String imageURL = '';
   String userDoc = '';
   String urlImage = '';
+  String latitude = '';
+  String longitude = '';
   XFile? profilePic;
   final CollectionReference _reference = FirebaseFirestore.instance.collection('users');
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    _emailController.dispose();
-    _passwordController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _ageController.dispose();
-    _phone_number.dispose();
-    super.dispose();
-  }
 
   getImage(ImageSource source) async {
     // setState(() {
@@ -59,33 +44,6 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
     setState(() {
       profilePic = image;
     });
-
-
-
-
-    // if (image != null) {
-    //   File cropped = await ImageCropper.cropImage(
-    //       sourcePath: image.path,
-    //       aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
-    //       compressQuality: 100,
-    //       maxWidth: 200,
-    //       maxHeight: 200,
-    //       compressFormat: ImageCompressFormat.png,
-    //       androidUiSettings: AndroidUiSettings(
-    //           toolbarColor: Colors.lightGreen,
-    //           toolbarTitle: 'Crop Image',
-    //           statusBarColor: Colors.green.shade900,
-    //           backgroundColor: Colors.white));
-    //
-    //   setState(() {
-    //     _image = cropped;
-    //     _inProcess = false;
-    //   });
-    // } else {
-    //   setState(() {
-    //     _inProcess = false;
-    //   });
-    // }
   }
 
   Future<void> _updateData() async{
@@ -114,18 +72,27 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
       imageURL = await referenceImageToUpload.getDownloadURL();
       print('image url ${imageURL.toString()}');
 
-      return users.doc(userDoc).set(
+      return users.doc(userDoc).update(
           {
-            'first_name' : _firstNameController.text.trim(),
-            'last_name' : _lastNameController.text.trim(),
-            'age' : _ageController.text.trim(),
+            'pharmacy_name' : _pharmacyNameController.text.trim(),
+            'location' : _location.text.trim(),
+            'phone_number' : _phone_number.text.trim(),
             'email': _emailController.text.trim(),
-            'image': imageURL,
-            'phone_number': _phone_number.text.trim(),
-            'role': 'member'
+            'latitude': latitude,
+            'longitude': longitude,
+            'role': 'pharmacy'
           }
       )
-          .whenComplete(() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>UserDataUpdate())))
+          .whenComplete(() => QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Success',
+          text: 'Your data has been updated successfully',
+          barrierDismissible: false,
+          onConfirmBtnTap: (){
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>PharmacyProfilePage()));
+          }
+      ))
           .catchError((error)=>QuickAlert.show(
         context: context,
         type: QuickAlertType.error,
@@ -146,7 +113,50 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
 
   }
 
-  List<String> docIDs = [];
+  Future updateDocument() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DocumentReference documentReference = firestore.collection('users').doc(userDoc);
+    try{
+      await documentReference.update(
+          {
+            'pharmacy_name' : _pharmacyNameController.text.trim(),
+            'location' : _location.text.trim(),
+            'phone_number' : _phone_number.text.trim(),
+            'email': _emailController.text.trim(),
+            'latitude': latitude,
+            'longitude': longitude,
+            'role': 'pharmacy'
+          }
+      ).whenComplete(() {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Success',
+          text: 'Your data has been updated successfully',
+          barrierDismissible: false,
+          onConfirmBtnTap: (){
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>PharmacyProfilePage()));
+          }
+        );
+      }).catchError((error){
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Oops...',
+          text: error.toString(),
+        );
+      });
+
+    }catch(error){
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'Oops...',
+        text: error.toString(),
+      );
+    }
+
+  }
 
   Future<String> getUserDetails() async{
     String? email = FirebaseAuth.instance.currentUser?.email;
@@ -159,11 +169,11 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
   }
 
   Future<CollectionReference> getDocument() async{
-      String? email = FirebaseAuth.instance.currentUser?.email;
-      final  CollectionReference collectionReference = FirebaseFirestore.instance.collection('users');
+    String? email = FirebaseAuth.instance.currentUser?.email;
+    final  CollectionReference collectionReference = FirebaseFirestore.instance.collection('users');
 
-      return collectionReference;
-    }
+    return collectionReference;
+  }
 
   @override
   void initState() {
@@ -174,12 +184,13 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
       var data = jsonDecode(value);
       print(data);
       setState(() {
-        _firstNameController.text = data[0]['first_name'];
-        _lastNameController.text = data[0]['last_name'];
-        _ageController.text = data[0]['age'].toString();
+        _pharmacyNameController.text = data[0]['pharmacy_name'];
+        _location.text = data[0]['location'];
         _emailController.text = data[0]['email'];
         _phone_number.text = data[0]['phone_number'];
         urlImage = data[0]['image'];
+        latitude = data[0]['latitude'];
+        longitude = data[0]['longtitude'];
       });
       getDocument().then((value){
         value.where('email', isEqualTo: data[0]['email']).get().then((value) => value.docs.forEach((element) {setState(() {
@@ -191,27 +202,20 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
     super.initState();
   }
 
-  // Future<CollectionReference> getUserDetails() async{
-  //     String? email = FirebaseAuth.instance.currentUser?.email;
-  //     final  CollectionReference collectionReference = FirebaseFirestore.instance.collection('users');
-  //     // QuerySnapshot querySnapshot = await collectionReference.where('email', isEqualTo: email).get();
-  //     // List<Object?> userData = querySnapshot.docs.map((e) => e.data()).toList();
-  //     // String jsonData = jsonEncode(userData);
-  //
-  //     // collectionReference.where('email', isEqualTo: _emailController.text.trim()).get().then((value) => value.docs.forEach((element) {setState(() {
-  //     //   _firstNameController.text = element.id;
-  //     // });}));
-  //
-  //     return collectionReference;
-  //   }
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _emailController.dispose();
+    _pharmacyNameController.dispose();
+    _location.dispose();
+    _phone_number.dispose();
+    super.dispose();
+  }
 
-  // getUserDetails().then((value){
-  //   value.where('email', isEqualTo: 'bohene8@gmail.com').get().then((value) => value.docs.forEach((element) {print(element.id);}));
-  // });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return  Scaffold(
         backgroundColor: Colors.grey[300],
         body: SafeArea(
             child: Center(
@@ -253,8 +257,8 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                             decoration: BoxDecoration(
-                              color: Colors.deepPurple[200],
-                              borderRadius: BorderRadius.circular(15)
+                                color: Colors.deepPurple[200],
+                                borderRadius: BorderRadius.circular(15)
                             ),
                             child: Text(
                               'Camera',
@@ -306,10 +310,10 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                               left: 20
                           ),
                           child: TextField(
-                            controller: _firstNameController,
+                            controller: _pharmacyNameController,
                             decoration: const InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'First Name'
+                                hintText: 'pharmacy_name'
                             ),
                           ),
                         ),
@@ -335,39 +339,10 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                               left: 20
                           ),
                           child: TextField(
-                            controller: _lastNameController,
+                            controller: _location,
                             decoration: const InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'Last Name'
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    //Age textfield
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 25
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            border: Border.all(
-                                color: Colors.white
-                            ),
-                            borderRadius: BorderRadius.circular(12)
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                              left: 20
-                          ),
-                          child: TextField(
-                            controller: _ageController,
-                            decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Age'
+                                hintText: 'Location'
                             ),
                           ),
                         ),
@@ -439,7 +414,7 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                           horizontal: 25
                       ),
                       child: GestureDetector(
-                        onTap: _updateData,
+                        onTap: imageURL == ''?_updateData:updateDocument,
                         child: Container(
                           padding: const EdgeInsets.all(25),
                           decoration: BoxDecoration(

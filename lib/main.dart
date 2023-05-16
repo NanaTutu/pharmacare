@@ -3,16 +3,19 @@ import 'dart:ui';
 
 import 'package:alarm/alarm.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pharmacare/Auth/AuthRedirect.dart';
 import 'package:pharmacare/Util/notifyService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:location/location.dart' as location;
 
 int count = 0;
 void callbackDispatcher(){
@@ -44,18 +47,40 @@ void main() async{
 
   await Workmanager().initialize(callbackDispatcher);
 
+  bool servicesEnabled;
+  LocationPermission permission;
+
+  servicesEnabled = await Geolocator.isLocationServiceEnabled();
+  permission = await Geolocator.checkPermission();
+  // if(permission == LocationPermission.denied){
+  //   Geolocator.requestPermission();
+  // }else{
+  //   Geolocator.requestPermission();
+  // }
+
   final androidInfo = await DeviceInfoPlugin().androidInfo;
   late final Map<Permission, PermissionStatus> statuses;
+
 
   if(androidInfo.version.sdkInt<=32){
     statuses = await[
       Permission.storage
     ].request();
+    if(permission == LocationPermission.denied){
+      Geolocator.requestPermission();
+    }else{
+      Geolocator.requestPermission();
+    }
   }else{
     statuses = await[
       Permission.storage,
-      Permission.notification
+      Permission.notification,
     ].request();
+    if(permission == LocationPermission.denied){
+      Geolocator.requestPermission();
+    }else{
+      Geolocator.requestPermission();
+    }
   }
 
   // var allAccepted = true;

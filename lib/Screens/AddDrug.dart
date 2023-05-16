@@ -1,52 +1,34 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:pharmacare/Util/UserModel.dart';
+import 'package:pharmacare/Screens/PharmacyHomePage.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 
-class UserDataUpdate extends StatefulWidget {
-  const UserDataUpdate({Key? key}) : super(key: key);
+class AddDrugPage extends StatefulWidget {
+  const AddDrugPage({Key? key}) : super(key: key);
 
   @override
-  State<UserDataUpdate> createState() => _UserDataUpdateState();
+  State<AddDrugPage> createState() => _AddDrugPageState();
 }
 
-class _UserDataUpdateState extends State<UserDataUpdate> {
+class _AddDrugPageState extends State<AddDrugPage> {
 
-  //controller
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _ageController = TextEditingController();
-  final _phone_number = TextEditingController();
+  final _description = TextEditingController();
+  final _drug_name = TextEditingController();
+  final _drug_price = TextEditingController();
 
   ImagePicker imagePicker = ImagePicker();
   String imageURL = '';
-  String userDoc = '';
-  String urlImage = '';
-  XFile? profilePic;
+  XFile? drug_photo;
+  File? drugPhoto;
   final CollectionReference _reference = FirebaseFirestore.instance.collection('users');
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    _emailController.dispose();
-    _passwordController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _ageController.dispose();
-    _phone_number.dispose();
-    super.dispose();
-  }
 
   getImage(ImageSource source) async {
     // setState(() {
@@ -57,38 +39,13 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
     if(image==null) return;
 
     setState(() {
-      profilePic = image;
+      drug_photo = image;
+      drugPhoto = File(image.path);
     });
 
-
-
-
-    // if (image != null) {
-    //   File cropped = await ImageCropper.cropImage(
-    //       sourcePath: image.path,
-    //       aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
-    //       compressQuality: 100,
-    //       maxWidth: 200,
-    //       maxHeight: 200,
-    //       compressFormat: ImageCompressFormat.png,
-    //       androidUiSettings: AndroidUiSettings(
-    //           toolbarColor: Colors.lightGreen,
-    //           toolbarTitle: 'Crop Image',
-    //           statusBarColor: Colors.green.shade900,
-    //           backgroundColor: Colors.white));
-    //
-    //   setState(() {
-    //     _image = cropped;
-    //     _inProcess = false;
-    //   });
-    // } else {
-    //   setState(() {
-    //     _inProcess = false;
-    //   });
-    // }
   }
 
-  Future<void> _updateData() async{
+  Future<void> _addDrugDetails() async{
 
     //create unique name for file
     String uniqueFileName = DateTime.now().millisecondsSinceEpoch.toString();
@@ -97,56 +54,77 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
 
     //Get a reference to storage root
     Reference referenceRoot = FirebaseStorage.instance.ref();
-    Reference referenceDirImages = referenceRoot.child('images/profile pics');
+    Reference referenceDirImages = referenceRoot.child('images/med_images');
 
     //Create a reference to the image to be stored
     Reference referenceImageToUpload = referenceDirImages.child(uniqueFileName);
 
-    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    CollectionReference drugs = FirebaseFirestore.instance.collection('drugs');
 
     //Handle errors/success
     try{
 
       //Store the file
-      await referenceImageToUpload.putFile(File(profilePic!.path));
+      await referenceImageToUpload.putFile(File(drug_photo!.path));
 
       //Success: get the download URL
       imageURL = await referenceImageToUpload.getDownloadURL();
       print('image url ${imageURL.toString()}');
 
-      return users.doc(userDoc).set(
-          {
-            'first_name' : _firstNameController.text.trim(),
-            'last_name' : _lastNameController.text.trim(),
-            'age' : _ageController.text.trim(),
-            'email': _emailController.text.trim(),
-            'image': imageURL,
-            'phone_number': _phone_number.text.trim(),
-            'role': 'member'
+      await FirebaseFirestore.instance.collection('drugs').add({
+        'drug_name': _drug_name.text.trim(),
+        'price': _drug_price.text.trim(),
+        'description': _description.text.trim(),
+        'image': imageURL,
+        'latitude': pharmacy_latitude,
+        'longitude':pharmacy_longitude,
+        'pharmacy_location':pharmacy_location,
+        'pharmacy_name': pharmacy_name,
+        'pharmacy_phone': pharmacy_phone,
+        'category': dropdownValue,
+        'email': pharmacy_email
+      }).whenComplete((){
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Success',
+          text: 'Drug Details Uploaded Successful',
+          confirmBtnText: 'Ok',
+          barrierDismissible: false,
+          onConfirmBtnTap: (){
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>PharmacyHomePage()));
           }
-      )
-          .whenComplete(() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>UserDataUpdate())))
-          .catchError((error)=>QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Oops...',
-        text: error.toString(),
-      ));
+        );
+      });
 
     }catch(error){
       //Some errors that occur
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Oops...',
-        text: error.toString(),
-      );
+      print(error.toString());
     }
-
 
   }
 
-  List<String> docIDs = [];
+  var categories = [
+    'Prescription Drugs',
+    'Over-the-Counter',
+    'Generic Medicines',
+    'Brand-Name Medicine',
+    'Herbal Medicines',
+    'Homeopathic Medicines',
+    'Vaccines',
+    'Controlled Substances',
+    'Nutritional Supplements',
+    'Medical Equipments'
+  ];
+
+  String dropdownValue = 'Prescription Drugs';
+  String pharmacy_latitude = '';
+  String pharmacy_longitude = '';
+  String pharmacy_location = '';
+  String pharmacy_name = '';
+  String pharmacy_phone = '';
+  String pharmacy_email = '';
+
 
   Future<String> getUserDetails() async{
     String? email = FirebaseAuth.instance.currentUser?.email;
@@ -158,56 +136,34 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
     return jsonData;
   }
 
-  Future<CollectionReference> getDocument() async{
-      String? email = FirebaseAuth.instance.currentUser?.email;
-      final  CollectionReference collectionReference = FirebaseFirestore.instance.collection('users');
-
-      return collectionReference;
-    }
 
   @override
   void initState() {
     // TODO: implement initState
-    // getUserDetails();
-    // getUserDetails().toString();
     getUserDetails().then((value) {
       var data = jsonDecode(value);
       print(data);
       setState(() {
-        _firstNameController.text = data[0]['first_name'];
-        _lastNameController.text = data[0]['last_name'];
-        _ageController.text = data[0]['age'].toString();
-        _emailController.text = data[0]['email'];
-        _phone_number.text = data[0]['phone_number'];
-        urlImage = data[0]['image'];
-      });
-      getDocument().then((value){
-        value.where('email', isEqualTo: data[0]['email']).get().then((value) => value.docs.forEach((element) {setState(() {
-          userDoc = element.id;
-        });
-        }));
+        pharmacy_name = data[0]['pharmacy_name'];
+        pharmacy_location = data[0]['location'];
+        pharmacy_latitude = data[0]['latitude'].toString();
+        pharmacy_longitude = data[0]['longitude'].toString();
+        pharmacy_phone = data[0]['phone_number'];
+        pharmacy_email = data[0]['email'];
       });
     });
     super.initState();
   }
 
-  // Future<CollectionReference> getUserDetails() async{
-  //     String? email = FirebaseAuth.instance.currentUser?.email;
-  //     final  CollectionReference collectionReference = FirebaseFirestore.instance.collection('users');
-  //     // QuerySnapshot querySnapshot = await collectionReference.where('email', isEqualTo: email).get();
-  //     // List<Object?> userData = querySnapshot.docs.map((e) => e.data()).toList();
-  //     // String jsonData = jsonEncode(userData);
-  //
-  //     // collectionReference.where('email', isEqualTo: _emailController.text.trim()).get().then((value) => value.docs.forEach((element) {setState(() {
-  //     //   _firstNameController.text = element.id;
-  //     // });}));
-  //
-  //     return collectionReference;
-  //   }
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _description.dispose();
+    _drug_name.dispose();
+    _drug_price.dispose();
+    super.dispose();
+  }
 
-  // getUserDetails().then((value){
-  //   value.where('email', isEqualTo: 'bohene8@gmail.com').get().then((value) => value.docs.forEach((element) {print(element.id);}));
-  // });
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +185,7 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'Update your details',
+                      'Add a drug o your database',
                       style: TextStyle(
                         fontSize: 20,
                       ),
@@ -240,7 +196,7 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                     CircleAvatar(
                       backgroundColor: Colors.grey,
                       radius: 70,
-                      backgroundImage: NetworkImage(urlImage),
+                      backgroundImage: drugPhoto == null?const AssetImage('assets/img/drug_placeholder.png'):Image.file(drugPhoto!).image,
                     ),
 
                     Row(
@@ -253,8 +209,8 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                             decoration: BoxDecoration(
-                              color: Colors.deepPurple[200],
-                              borderRadius: BorderRadius.circular(15)
+                                color: Colors.deepPurple[200],
+                                borderRadius: BorderRadius.circular(15)
                             ),
                             child: Text(
                               'Camera',
@@ -306,10 +262,10 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                               left: 20
                           ),
                           child: TextField(
-                            controller: _firstNameController,
+                            controller: _drug_name,
                             decoration: const InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'First Name'
+                                hintText: 'Name'
                             ),
                           ),
                         ),
@@ -335,10 +291,11 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                               left: 20
                           ),
                           child: TextField(
-                            controller: _lastNameController,
+                            controller: _description,
+                            maxLines: 5,
                             decoration: const InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'Last Name'
+                                hintText: 'Description'
                             ),
                           ),
                         ),
@@ -364,10 +321,11 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                               left: 20
                           ),
                           child: TextField(
-                            controller: _ageController,
+                            controller: _drug_price,
+                            keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'Age'
+                                hintText: 'Price'
                             ),
                           ),
                         ),
@@ -392,42 +350,28 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                           padding: const EdgeInsets.only(
                               left: 20
                           ),
-                          child: TextField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Email'
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    //email textfield
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 25
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            border: Border.all(
-                                color: Colors.white
-                            ),
-                            borderRadius: BorderRadius.circular(12)
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                              left: 20
-                          ),
-                          child: TextField(
-                            controller: _phone_number,
-                            decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Phone Number'
-                            ),
-                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton(
+                              value: dropdownValue,
+                              items: categories.map((String categories){
+                                return DropdownMenuItem(
+                                  value: categories,
+                                  child: Text(
+                                    categories,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 17,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue){
+                                setState(() {
+                                  dropdownValue = newValue!;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                            )
+                          )
                         ),
                       ),
                     ),
@@ -439,7 +383,7 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                           horizontal: 25
                       ),
                       child: GestureDetector(
-                        onTap: _updateData,
+                        onTap: _addDrugDetails,
                         child: Container(
                           padding: const EdgeInsets.all(25),
                           decoration: BoxDecoration(
@@ -448,7 +392,7 @@ class _UserDataUpdateState extends State<UserDataUpdate> {
                           ),
                           child: const Center(
                             child: Text(
-                              'Update Information',
+                              'Upload Drug Details',
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
